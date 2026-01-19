@@ -1,16 +1,462 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Mi primera página</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piedra, Papel o Tijeras</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .pantalla { display: none; }
+        .pantalla.activa { display: block; }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; font-size: 2.5em; }
+        h2 { text-align: center; color: #555; margin-bottom: 25px; }
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .btn-crear { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-unirse { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .btn-secundario { background: #999; color: white; }
+        .codigo-grande {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+            font-family: monospace;
+            letter-spacing: 5px;
+        }
+        .input-codigo {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+        .estado {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            color: #2e7d32;
+            text-align: center;
+        }
+        .estado.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+        .info-jugadores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .jugador {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .opciones-juego {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .btn-opcion {
+            padding: 20px;
+            font-size: 2em;
+            background: #f5f5f5;
+            border: 3px solid #ddd;
+            width: 100%;
+        }
+        .btn-opcion.seleccionado {
+            border-color: #667eea;
+            background: #e8eaf6;
+        }
+        .resultados {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .resultado-jugador {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .resultado-eleccion { font-size: 3em; margin: 10px 0; }
+        .contador-puntos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .puntos {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .numero-puntos { font-size: 2.5em; font-weight: bold; color: #667eea; }
+        .esperando-texto { text-align: center; color: #666; margin: 20px 0; animation: parpadeo 1.5s infinite; }
+        @keyframes parpadeo { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.5; } }
+    </style>
 </head>
+<body>
+    <div class="container">
+        <!-- PANTALLA INICIAL -->
+        <div id="pantallaPrincipal" class="pantalla activa">
+            <h1>🎮 Piedra, Papel o Tijeras</h1>
+            <button class="btn-crear" onclick="crearSala()">➕ Crear una Sala</button>
+            <button class="btn-unirse" onclick="mostrarPantallaUnirse()">🚪 Unirse a una Sala</button>
+        </div>
 
-<body style="font-family: Arial; text-align: center;">
-  <h1>🌐 Mi primera página</h1>
-  <p>Esta página la hice yo</p>
+        <!-- PANTALLA CREAR SALA -->
+        <div id="pantallaCrear" class="pantalla">
+            <h2>Creando Sala...</h2>
+            <div class="info-jugadores">
+                <div class="jugador"><h4>Tu Rol</h4><div>Jugador 1</div></div>
+                <div class="jugador"><h4>Estado</h4><div>👑 Creador</div></div>
+            </div>
+            <div style="background: #f0f0f0; padding: 25px; border-radius: 10px; text-align: center;">
+                <h3 style="color: #666; margin-bottom: 10px;">Código de Sala</h3>
+                <div class="codigo-grande" id="codigoSala">------</div>
+                <button onclick="copiarCodigo()" style="background: #667eea; color: white;">📋 Copiar Código</button>
+            </div>
+            <div class="esperando-texto">Esperando al Jugador 2...</div>
+            <button class="btn-secundario" onclick="volverAlInicio()">Cancelar</button>
+        </div>
 
-  <button onclick="alert('Funciona 😎')">
-    Probar botón
-  </button>
+        <!-- PANTALLA UNIRSE -->
+        <div id="pantallaUnirse" class="pantalla">
+            <h2>Unirse a una Sala</h2>
+            <input type="text" class="input-codigo" id="inputCodigo" placeholder="Ingresa el código" maxlength="6">
+            <button onclick="unirseSala()" style="background: #f5576c; color: white;">Unirse</button>
+            <button class="btn-secundario" onclick="volverAlInicio()">Volver</button>
+            <div id="errorUnirse" style="display: none; margin-top: 15px;"></div>
+        </div>
+
+        <!-- PANTALLA ESPERA JUGADOR 2 -->
+        <div id="pantallaEsperaJugador2" class="pantalla">
+            <h2>Esperando al Jugador 2...</h2>
+            <div class="info-jugadores">
+                <div class="jugador"><h4>Tu Rol</h4><div>Jugador 2</div></div>
+                <div class="jugador"><h4>Estado</h4><div>✅ Conectado</div></div>
+            </div>
+            <div class="estado">
+                <strong>¡Jugador 2 se ha unido!</strong><br>
+                Presiona "Jugar" para comenzar
+            </div>
+            <button onclick="iniciarJuego()" style="background: #4caf50; color: white; padding: 15px; font-size: 1.1em;">▶️ Jugar</button>
+        </div>
+
+        <!-- PANTALLA JUEGO -->
+        <div id="pantallaJuego" class="pantalla">
+            <h2>¡A Jugar!</h2>
+            <div class="contador-puntos">
+                <div class="puntos">
+                    <h4>Tus Puntos</h4>
+                    <div class="numero-puntos" id="misPuntos">0</div>
+                </div>
+                <div class="puntos">
+                    <h4>Puntos del Rival</h4>
+                    <div class="numero-puntos" id="puntosRival">0</div>
+                </div>
+            </div>
+            <div class="estado">
+                <strong id="rondaActual">Ronda 1</strong> - Selecciona tu jugada
+            </div>
+            <div class="opciones-juego">
+                <button class="btn-opcion" onclick="seleccionarJugada('piedra')">🪨</button>
+                <button class="btn-opcion" onclick="seleccionarJugada('papel')">📄</button>
+                <button class="btn-opcion" onclick="seleccionarJugada('tijeras')">✂️</button>
+            </div>
+            <div id="esperandoRival" class="esperando-texto" style="display: none;">
+                Esperando la jugada del rival...
+            </div>
+            <div id="contenedorResultados" style="display: none;">
+                <div class="resultados">
+                    <div class="resultado-jugador">
+                        <h4>Tu Jugada</h4>
+                        <div class="resultado-eleccion" id="miJugada">?</div>
+                    </div>
+                    <div class="resultado-jugador">
+                        <h4>Jugada del Rival</h4>
+                        <div class="resultado-eleccion" id="jugadaRival">?</div>
+                    </div>
+                </div>
+                <div class="resultado-jugador" style="grid-column: 1 / -1; margin-top: 15px;">
+                    <div id="textoResultado" style="font-size: 1.2em; font-weight: bold; padding: 10px; border-radius: 5px;"></div>
+                </div>
+                <button onclick="proximaRonda()" style="background: #667eea; color: white;">Siguiente Ronda</button>
+            </div>
+            <button class="btn-secundario" onclick="salirDelJuego()">Salir del Juego</button>
+        </div>
+    </div>
+
+    <script>
+        let codigoSalaActual = null;
+        let miNumerojugador = null;
+        let puntosMios = 0;
+        let puntosRival = 0;
+        let rondaActual = 1;
+        let pollingInterval = null;
+
+        function mostrarPantalla(id) {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById(id).classList.add('activa');
+        }
+
+        function generarCodigo() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        async function crearSala() {
+            codigoSalaActual = generarCodigo();
+            miNumerojugador = 1;
+            
+            try {
+                const res = await fetch('/api/crearSala', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo: codigoSalaActual })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('codigoSala').textContent = codigoSalaActual;
+                    mostrarPantalla('pantallaCrear');
+                    iniciarPolling();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error de conexión: ' + error);
+            }
+        }
+
+        function mostrarPantallaUnirse() {
+            document.getElementById('inputCodigo').value = '';
+            document.getElementById('errorUnirse').style.display = 'none';
+            mostrarPantalla('pantallaUnirse');
+        }
+
+        async function unirseSala() {
+            const codigo = document.getElementById('inputCodigo').value.trim().toUpperCase();
+            const errorDiv = document.getElementById('errorUnirse');
+
+            if (!codigo) {
+                errorDiv.innerHTML = '<div class="estado error">Por favor ingresa un código</div>';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/unirseSala', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    codigoSalaActual = codigo;
+                    miNumerojugador = 2;
+                    mostrarPantalla('pantallaEsperaJugador2');
+                    iniciarPolling();
+                } else {
+                    errorDiv.innerHTML = '<div class="estado error">' + data.error + '</div>';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.innerHTML = '<div class="estado error">Error: ' + error + '</div>';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function iniciarJuego() {
+            rondaActual = 1;
+            puntosMios = 0;
+            puntosRival = 0;
+            mostrarPantalla('pantallaJuego');
+            actualizarPuntos();
+        }
+
+        function iniciarPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(async () => {
+                if (!codigoSalaActual) return;
+                
+                try {
+                    const res = await fetch(`/api/sala/${codigoSalaActual}`);
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        const sala = data.sala;
+                        
+                        if (miNumerojugador === 1 && sala.jugador2.conectado && document.getElementById('pantallaCrear').classList.contains('activa')) {
+                            mostrarPantalla('pantallaEsperaJugador2');
+                        }
+                        
+                        if (sala.jugador1.jugada && sala.jugador2.jugada) {
+                            calcularResultado(sala.jugador1.jugada, sala.jugador2.jugada);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling:', error);
+                }
+            }, 500);
+        }
+
+        function detenerPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        function seleccionarJugada(jugada) {
+            document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('seleccionado'));
+            event.target.classList.add('seleccionado');
+
+            fetch('/api/jugada', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    codigo: codigoSalaActual,
+                    numeroJugador: miNumerojugador,
+                    jugada: jugada
+                })
+            }).catch(error => console.error('Error:', error));
+
+            document.getElementById('esperandoRival').style.display = 'block';
+        }
+
+        function calcularResultado(jugada1, jugada2) {
+            let resultado;
+            
+            if (jugada1 === jugada2) {
+                resultado = 'empate';
+            } else if (
+                (jugada1 === 'piedra' && jugada2 === 'tijeras') ||
+                (jugada1 === 'papel' && jugada2 === 'piedra') ||
+                (jugada1 === 'tijeras' && jugada2 === 'papel')
+            ) {
+                resultado = 'gana1';
+            } else {
+                resultado = 'gana2';
+            }
+
+            const iconos = { piedra: '🪨', papel: '📄', tijeras: '✂️' };
+
+            document.getElementById('miJugada').textContent = iconos[miNumerojugador === 1 ? jugada1 : jugada2];
+            document.getElementById('jugadaRival').textContent = iconos[miNumerojugador === 1 ? jugada2 : jugada1];
+
+            let textoResultado = '';
+            let claseResultado = '';
+
+            if (resultado === 'empate') {
+                textoResultado = '¡EMPATE!';
+                claseResultado = 'empate';
+            } else if ((miNumerojugador === 1 && resultado === 'gana1') || (miNumerojugador === 2 && resultado === 'gana2')) {
+                textoResultado = '¡GANASTE! 🎉';
+                claseResultado = 'gana';
+                puntosMios++;
+            } else {
+                textoResultado = 'Perdiste 😢';
+                claseResultado = 'pierde';
+                puntosRival++;
+            }
+
+            document.getElementById('textoResultado').textContent = textoResultado;
+            if (claseResultado === 'gana') document.getElementById('textoResultado').style.background = '#e8f5e9';
+            if (claseResultado === 'pierde') document.getElementById('textoResultado').style.background = '#ffebee';
+            if (claseResultado === 'empate') document.getElementById('textoResultado').style.background = '#e3f2fd';
+
+            document.getElementById('esperandoRival').style.display = 'none';
+            document.getElementById('contenedorResultados').style.display = 'block';
+
+            actualizarPuntos();
+            detenerPolling();
+        }
+
+        function actualizarPuntos() {
+            document.getElementById('misPuntos').textContent = puntosMios;
+            document.getElementById('puntosRival').textContent = puntosRival;
+        }
+
+        function proximaRonda() {
+            fetch('/api/proximaRonda', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo: codigoSalaActual })
+            }).catch(error => console.error('Error:', error));
+
+            rondaActual++;
+            document.getElementById('rondaActual').textContent = 'Ronda ' + rondaActual;
+            document.querySelectorAll('.btn-opcion').forEach(btn => btn.classList.remove('seleccionado'));
+            document.getElementById('esperandoRival').style.display = 'none';
+            document.getElementById('contenedorResultados').style.display = 'none';
+            iniciarPolling();
+        }
+
+        function salirDelJuego() {
+            detenerPolling();
+            fetch('/api/limpiarSala', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo: codigoSalaActual })
+            }).catch(error => console.error('Error:', error));
+            volverAlInicio();
+        }
+
+        function volverAlInicio() {
+            detenerPolling();
+            codigoSalaActual = null;
+            miNumerojugador = null;
+            puntosMios = 0;
+            puntosRival = 0;
+            rondaActual = 1;
+            mostrarPantalla('pantallaPrincipal');
+        }
+
+        function copiarCodigo() {
+            const codigo = document.getElementById('codigoSala').textContent;
+            navigator.clipboard.writeText(codigo).then(() => {
+                alert('Código copiado: ' + codigo);
+            }).catch(error => {
+                alert('No se pudo copiar: ' + error);
+            });
+        }
+    </script>
 </body>
 </html>
